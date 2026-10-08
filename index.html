@@ -3,336 +3,883 @@
 <head>
   <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>دفتر الحصص الذكي</title>
+  
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="دفتر الحصص">
+  <meta name="theme-color" content="#1e293b">
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z'/></svg>">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2997/2997295.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-    body { background-color: #0b1120; color: #f8fafc; padding: 14px; max-width: 600px; margin: 0 auto; min-height: 100vh; }
-    
-    header { background: #1e293b; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 16px; border: 1px solid #334155; }
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    h1 { font-size: 1.25rem; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-    
-    .top-actions { display: flex; gap: 8px; }
-    .btn-sm { background: #334155; color: #f1f5f9; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-    .btn-sm:hover { background: #475569; }
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --success-dark: #15803d;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 16px;
+    }
 
-    .search-box { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 0.95rem; margin-bottom: 12px; outline: none; }
-    .search-box:focus { border-color: #38bdf8; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
-    .filter-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; cursor: pointer; white-space: nowrap; }
-    .filter-btn.active { background: #0284c7; color: #fff; border-color: #0284c7; font-weight: bold; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 70px;
+    }
 
-    .student-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); position: relative; }
-    .student-card.has-due { border-right: 5px solid #10b981; }
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 24px 20px 20px;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
 
-    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-    .st-name { font-size: 1.15rem; font-weight: bold; color: #f8fafc; }
-    .st-stage { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
-    .card-actions { display: flex; gap: 6px; }
-    .icon-btn { background: none; border: none; color: #64748b; font-size: 1rem; cursor: pointer; padding: 2px 6px; }
-    .icon-btn:hover { color: #f8fafc; }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
 
-    .session-tracker { background: #0f172a; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin: 12px 0; border: 1px solid #1e293b; }
-    .counter-display { text-align: right; }
-    .counter-number { font-size: 1.6rem; font-weight: bold; color: #38bdf8; }
-    .counter-label { font-size: 0.8rem; color: #94a3b8; }
-    .price-due { font-size: 0.95rem; color: #34d399; font-weight: bold; margin-top: 2px; }
+    .app-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-    .counter-controls { display: flex; gap: 8px; }
-    .btn-circle { width: 44px; height: 44px; border-radius: 12px; border: none; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .btn-plus { background: #0284c7; color: white; }
-    .btn-minus { background: #334155; color: #94a3b8; font-size: 1.1rem; }
-    .btn-plus:active, .btn-minus:active { transform: scale(0.95); }
+    .header-btns {
+      display: flex;
+      gap: 8px;
+    }
 
-    .btn-invoice { width: 100%; background: #059669; color: white; border: none; padding: 11px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
-    .btn-invoice:hover { background: #047857; }
-    .btn-invoice:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+    .btn-header {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(4px);
+    }
 
-    .fab { position: fixed; bottom: 20px; left: 20px; width: 56px; height: 56px; border-radius: 28px; background: #0284c7; color: white; font-size: 1.8rem; border: none; box-shadow: 0 4px 15px rgba(2,132,199,0.5); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .search-box {
+      width: 100%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+    }
 
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-    .modal.active { display: flex; }
-    .modal-box { background: #1e293b; width: 100%; max-width: 440px; border-radius: 18px; padding: 20px; border: 1px solid #334155; }
-    .modal-title { font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 14px; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; }
-    .form-control { width: 100%; padding: 10px; border-radius: 10px; background: #0f172a; border: 1px solid #334155; color: white; outline: none; }
-    .form-actions { display: flex; gap: 8px; margin-top: 16px; }
-    .btn-main { flex: 1; padding: 11px; border-radius: 10px; border: none; background: #0284c7; color: white; font-weight: bold; cursor: pointer; }
-    .btn-cancel { padding: 11px 18px; border-radius: 10px; border: none; background: #334155; color: #94a3b8; cursor: pointer; }
+    .search-box::placeholder {
+      color: rgba(255,255,255,0.65);
+    }
 
-    .empty-state { text-align: center; color: #64748b; margin-top: 60px; font-size: 0.95rem; line-height: 1.8; }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card.ready-for-billing {
+      border: 2px solid var(--success);
+      background: #f0fdf4;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .header-left-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .student-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .student-grade {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .badge-price {
+      background: #eff6ff;
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .btn-icon-action {
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-edit-student {
+      background: #f1f5f9;
+      color: var(--primary);
+      border-color: #cbd5e1;
+    }
+
+    .btn-edit-student:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-delete-student {
+      background: #fee2e2;
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+
+    .btn-delete-student:hover {
+      background: #fca5a5;
+    }
+
+    /* عداد الحصص المرن المفتوح */
+    .cycle-steps {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 12px 0 16px;
+      gap: 6px;
+    }
+
+    .step-item {
+      flex: 1 1 calc(25% - 6px);
+      min-width: 68px;
+      height: 38px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      position: relative;
+      transition: all 0.2s ease;
+      padding: 0 4px;
+    }
+
+    .step-item.completed {
+      background: #dcfce7;
+      color: var(--success);
+      border: 1.5px solid var(--success);
+    }
+
+    .step-item.current {
+      border: 2px dashed var(--primary);
+      color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .sessions-list {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+    }
+
+    .session-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .session-row:last-child {
+      border-bottom: none;
+    }
+
+    .session-num {
+      font-weight: 700;
+      color: var(--primary-dark);
+      width: 65px;
+    }
+
+    .session-time {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      direction: ltr;
+    }
+
+    .session-price-val {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-record {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+      font-size: 0.95rem;
+    }
+
+    .btn-reset {
+      background: var(--surface);
+      color: var(--success);
+      border: 1.5px solid var(--success);
+    }
+
+    .btn-undo {
+      background: transparent;
+      color: var(--danger);
+      font-size: 0.8rem;
+      padding: 4px;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .fab-add {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 26px;
+      z-index: 20;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--text-muted);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="header-top">
-      <h1>📚 دفتر الحصص الذكي</h1>
-      <div class="top-actions">
-        <button class="btn-sm" onclick="openPaymentModal()">💳 بيانات الدفع</button>
-        <button class="btn-sm" onclick="exportBackup()">💾 نسخ احتياطي</button>
+    <div class="top-bar">
+      <div class="app-title">
+        <span>📚</span> دفتر الحصص الذكي
+      </div>
+      <div class="header-btns">
+        <button class="btn-header" onclick="openPaymentSettings()">💳 بيانات الدفع</button>
+        <button class="btn-header" onclick="exportData()">💾 نسخة احتياطية</button>
       </div>
     </div>
     <input type="text" id="searchInput" class="search-box" placeholder="ابحث باسم الطالب أو المرحلة..." oninput="renderStudents()">
-    <div class="filters">
-      <button class="filter-btn active" onclick="setFilter('all', this)">كل الطلاب</button>
-      <button class="filter-btn" onclick="setFilter('due', this)">لديهم حصص مستحقة</button>
-      <button class="filter-btn" onclick="setFilter('zero', this)">خالص الحساب (0)</button>
-    </div>
   </header>
 
-  <div id="studentsList"></div>
+  <div class="container">
+    <div class="filter-tabs">
+      <button class="tab-btn active" onclick="setFilter('all', this)">كل الطلاب</button>
+      <button class="tab-btn" onclick="setFilter('ready', this)">مطلوب الحساب (حصص مستحقة) 🟢</button>
+      <button class="tab-btn" onclick="setFilter('in-progress', this)">خالص الحساب (0) ⏳</button>
+    </div>
 
-  <button class="fab" onclick="openStudentModal()" title="إضافة طالب">+</button>
+    <div class="students-grid" id="studentsList"></div>
+  </div>
 
-  <!-- نافذة إضافة / تعديل طالب -->
-  <div class="modal" id="studentModal">
-    <div class="modal-box">
-      <div class="modal-title" id="studentModalTitle">إضافة طالب جديد</div>
-      <input type="hidden" id="editStudentId">
+  <button class="fab-add" onclick="openAddStudentModal()" title="إضافة طالب">+</button>
+
+  <div class="modal" id="recordSessionModal">
+    <div class="modal-content">
+      <h3 class="modal-title" id="recordModalTitle">تسجيل حصة جديدة</h3>
+      
       <div class="form-group">
-        <label>اسم الطالب</label>
-        <input type="text" id="stName" class="form-control" placeholder="مثال: يوسف أحمد">
+        <label>رقم الحصة في هذه الدورة</label>
+        <input type="text" id="mSessionNum" readonly style="background:#f1f5f9; font-weight:700;">
       </div>
+
       <div class="form-group">
-        <label>المرحلة / الصف</label>
-        <input type="text" id="stStage" class="form-control" placeholder="مثال: أولى ثانوي - لغة عربية">
+        <label>تاريخ الحصة</label>
+        <input type="date" id="mSessionDate">
       </div>
+
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label>وقت البداية</label>
+          <input type="time" id="mStartTime">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>وقت النهاية</label>
+          <input type="time" id="mEndTime">
+        </div>
+      </div>
+
       <div class="form-group">
-        <label>سعر الحصة (ج.م)</label>
-        <input type="number" id="stPrice" class="form-control" placeholder="100">
+        <label>سعر هذه الحصة (جنيه)</label>
+        <input type="number" id="mSessionPrice">
       </div>
-      <div class="form-group">
-        <label>رقم واتساب ولي الأمر</label>
-        <input type="tel" id="stPhone" class="form-control" placeholder="010XXXXXXXX">
-      </div>
-      <div class="form-actions">
-        <button class="btn-main" onclick="saveStudent()">حفظ الطالب</button>
-        <button class="btn-cancel" onclick="closeModal('studentModal')">إلغاء</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-record" onclick="confirmSaveSession()">حفظ وتأكيد الحصة</button>
+        <button class="btn" style="background:#e2e8f0; color:#333;" onclick="closeModal('recordSessionModal')">إلغاء</button>
       </div>
     </div>
   </div>
 
-  <!-- نافذة بيانات الدفع -->
-  <div class="modal" id="paymentModal">
-    <div class="modal-box">
-      <div class="modal-title">بيانات التحويل والدفع (تُرفق تلقائياً بالفاتورة)</div>
+  <div class="modal" id="studentModal">
+    <div class="modal-content">
+      <h3 class="modal-title" id="studentModalTitle">إضافة طالب جديد</h3>
       <div class="form-group">
-        <label>اسم الأستاذ / المعلم</label>
-        <input type="text" id="teacherName" class="form-control" placeholder="أ/ سيد عبد الحميد">
+        <label>اسم الطالب</label>
+        <input type="text" id="sName" placeholder="مثال: يوسف أحمد">
       </div>
       <div class="form-group">
-        <label>تفاصيل الدفع (فودافون كاش / إنستاباي)</label>
-        <textarea id="paymentDetails" class="form-control" rows="3" placeholder="فودافون كاش: 010XXXXXXXX&#10;إنستاباي: username@instapay"></textarea>
+        <label>المرحلة / الصف الدراسي</label>
+        <input type="text" id="sGrade" placeholder="مثال: 3 ثانوي - لغة عربية">
       </div>
-      <div class="form-actions">
-        <button class="btn-main" onclick="savePaymentSettings()">حفظ البيانات</button>
-        <button class="btn-cancel" onclick="closeModal('paymentModal')">إغلاق</button>
+      <div class="form-group">
+        <label>رقم ولي الأمر (واتساب)</label>
+        <input type="tel" id="sPhone" placeholder="010XXXXXXXX أو 01XXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>سعر الحصة الافتراضي (جنيه)</label>
+        <input type="number" id="sPrice" placeholder="مثال: 150">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-record" id="btnSaveStudentText" onclick="saveStudent()">حفظ الطالب</button>
+        <button class="btn" style="background:#e2e8f0; color:#333;" onclick="closeModal('studentModal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="paymentSettingsModal">
+    <div class="modal-content">
+      <h3 class="modal-title">بيانات التحويل المسجلة</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">هذه البيانات ستُرفق تلقائياً في رسالة الواتساب لولي الأمر:</p>
+      
+      <div class="form-group">
+        <label>رقم فودافون كاش / المحفظة</label>
+        <input type="text" id="cfgVodafone" placeholder="010XXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>حساب إنستاباي (InstaPay)</label>
+        <input type="text" id="cfgInstapay" placeholder="username@instapay">
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-record" onclick="savePaymentSettings()">حفظ البيانات</button>
+        <button class="btn" style="background:#e2e8f0; color:#333;" onclick="closeModal('paymentSettingsModal')">إغلاق</button>
       </div>
     </div>
   </div>
 
   <script>
-    let students = JSON.parse(localStorage.getItem('hisas_students') || '[]');
-    let paymentSettings = JSON.parse(localStorage.getItem('hisas_payment') || JSON.stringify({
-      teacherName: 'أ/ سيد عبد الحميد',
-      details: 'فودافون كاش: \nإنستاباي: '
-    }));
+    let students = JSON.parse(localStorage.getItem('smart_tutor_students')) || [];
+    let paymentInfo = JSON.parse(localStorage.getItem('smart_tutor_payment')) || { vodafone: '', instapay: '' };
     let currentFilter = 'all';
+    let activeStudentIdForSession = null;
+    let editingStudentId = null;
 
-    function saveToStorage() {
-      localStorage.setItem('hisas_students', JSON.stringify(students));
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      let [hours, minutes] = timeStr.split(':').map(Number);
+      const period = hours >= 12 ? 'م' : 'ص';
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes < 10 ? '0' + minutes : minutes} ${period}`;
     }
 
-    function setFilter(type, btn) {
-      currentFilter = type;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    function formatDateFriendly(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ar-EG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function setFilter(filter, el) {
+      currentFilter = filter;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
       renderStudents();
     }
 
     function renderStudents() {
       const list = document.getElementById('studentsList');
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
-      
-      let filtered = students.filter(st => {
-        const matchSearch = st.name.toLowerCase().includes(search) || (st.stage && st.stage.toLowerCase().includes(search));
+      list.innerHTML = '';
+
+      let filtered = students.filter(s => {
+        const matchSearch = s.name.toLowerCase().includes(search) || (s.grade && s.grade.toLowerCase().includes(search));
+        const count = s.sessions ? s.sessions.length : 0;
         if (!matchSearch) return false;
-        if (currentFilter === 'due') return (st.sessions || 0) > 0;
-        if (currentFilter === 'zero') return (st.sessions || 0) === 0;
+        if (currentFilter === 'ready') return count > 0;
+        if (currentFilter === 'in-progress') return count === 0;
         return true;
       });
 
       if (filtered.length === 0) {
-        list.innerHTML = `<div class="empty-state">لا يوجد طلاب مسجلين وفق هذا العرض.<br>اضغط (+) لإضافة طالب جديد.</div>`;
+        list.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا يوجد طلاب مسجلين وفق هذا البحث. اضغط على (+) لإضافة طالب جديد.</div>`;
         return;
       }
 
-      list.innerHTML = filtered.map(st => {
-        const count = st.sessions || 0;
-        const price = Number(st.price) || 0;
-        const total = count * price;
-        return `
-          <div class="student-card ${count > 0 ? 'has-due' : ''}">
-            <div class="card-header">
-              <div>
-                <div class="st-name">${st.name}</div>
-                <div class="st-stage">${st.stage || 'عام'} • ${price} ج/حصة</div>
-              </div>
-              <div class="card-actions">
-                <button class="icon-btn" onclick="editStudent('${st.id}')" title="تعديل">✏️</button>
-                <button class="icon-btn" onclick="deleteStudent('${st.id}')" title="حذف">🗑️</button>
-              </div>
-            </div>
+      filtered.forEach(s => {
+        const count = s.sessions ? s.sessions.length : 0;
+        const totalDue = s.sessions ? s.sessions.reduce((acc, cur) => acc + Number(cur.price || s.defaultPrice || 0), 0) : 0;
 
-            <div class="session-tracker">
-              <div class="counter-display">
-                <div class="counter-number">${count} <span style="font-size: 0.9rem; color:#94a3b8;">حصص</span></div>
-                <div class="price-due">المستحق: ${total} ج.م</div>
-              </div>
-              <div class="counter-controls">
-                <button class="btn-circle btn-minus" onclick="changeSession('${st.id}', -1)" title="خصم حصة">-</button>
-                <button class="btn-circle btn-plus" onclick="changeSession('${st.id}', 1)" title="تسجيل حصة">+</button>
-              </div>
-            </div>
+        const card = document.createElement('div');
+        card.className = `card ${count > 0 ? 'ready-for-billing' : ''}`;
 
-            <button class="btn-invoice" onclick="sendInvoice('${st.id}')" ${count === 0 ? 'disabled' : ''}>
-              💬 قفل الحساب وإرسال الفاتورة عبر واتساب (${total} ج)
+        // توليد مربعات الحصص بشكل مفتوح وتلقائي
+        let stepsHtml = '';
+        if (count === 0) {
+          stepsHtml = `<div class="step-item current">الحصة 1 (التالية)</div>`;
+        } else {
+          for (let i = 1; i <= count; i++) {
+            stepsHtml += `<div class="step-item completed">✓ الحصة ${i}</div>`;
+          }
+          stepsHtml += `<div class="step-item current">+ الحصة ${count + 1}</div>`;
+        }
+
+        let sessionsDetailsHtml = '';
+        if (s.sessions && s.sessions.length > 0) {
+          sessionsDetailsHtml = `<div class="sessions-list">`;
+          s.sessions.forEach(sess => {
+            sessionsDetailsHtml += `
+              <div class="session-row">
+                <span class="session-num">حصة ${sess.num}</span>
+                <span>📅 ${formatDateFriendly(sess.date)}</span>
+                <span class="session-time">${formatTime12h(sess.startTime)} - ${formatTime12h(sess.endTime)}</span>
+                <span class="session-price-val">${sess.price} ج</span>
+              </div>
+            `;
+          });
+          sessionsDetailsHtml += `</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="student-name">${s.name}</div>
+              <div class="student-grade">${s.grade || 'طالب خصوصي'}</div>
+            </div>
+            <div class="header-left-actions">
+              <div class="badge-price">${s.defaultPrice} ج / حصة</div>
+              <button class="btn-icon-action btn-edit-student" onclick="openEditStudentModal('${s.id}')" title="تعديل بيانات الطالب">✏️</button>
+              <button class="btn-icon-action btn-delete-student" onclick="deleteStudent('${s.id}')" title="حذف الطالب نهائياً">🗑️</button>
+            </div>
+          </div>
+
+          <div class="cycle-steps">${stepsHtml}</div>
+          
+          ${sessionsDetailsHtml}
+
+          <div class="actions">
+            <button class="btn btn-record" onclick="openRecordModal('${s.id}')">
+              + تسجيل الحصة (رقم ${count + 1})
             </button>
+
+            ${count > 0 ? `
+              <button class="btn btn-whatsapp" onclick="sendInvoiceWhatsApp('${s.id}')">
+                📲 إرسال الفاتورة عبر واتساب (${count} حصص - ${totalDue} ج)
+              </button>
+              <button class="btn btn-reset" onclick="resetCycle('${s.id}')">
+                ✓ تم استلام المبلغ (بدء دورة جديدة)
+              </button>
+              <button class="btn-undo" onclick="undoLastSession('${s.id}')">تراجع عن آخر حصة مسجلة</button>
+            ` : ''}
           </div>
         `;
-      }).join('');
+        list.appendChild(card);
+      });
     }
 
-    function changeSession(id, amount) {
-      const st = students.find(s => s.id === id);
-      if (!st) return;
-      st.sessions = Math.max(0, (st.sessions || 0) + amount);
-      saveToStorage();
-      renderStudents();
-    }
+    function openEditStudentModal(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
 
-    function sendInvoice(id) {
-      const st = students.find(s => s.id === id);
-      if (!st || !st.sessions) return;
-
-      const total = st.sessions * (Number(st.price) || 0);
-      let phone = (st.phone || '').trim().replace(/[^0-9]/g, '');
-      if (phone.startsWith('0')) {
-        phone = '2' + phone;
-      }
-
-      const msg = `السلام عليكم ورحمة الله وبركاته 🌸\nولي أمر الطالب/ة: *${st.name}*\n\nتحية طيبة وبعد، نحيط سيادتكم علماً بأنه تم إتمام عدد *(${st.sessions}) حصص* بمقرر اللغة العربية.\n\n📊 *تفاصيل الحساب:* \n- عدد الحصص المنجزة: ${st.sessions}\n- سعر الحصة: ${st.price} ج.م\n- 💰 *إجمالي المبلغ المستحق: ${total} ج.م*\n\n💳 *طرق الدفع والتحويل:*\n${paymentSettings.details}\n\nشاكرين لسيادتكم دوام التعاون والتقدير 🌿\n*${paymentSettings.teacherName}*`;
-
-      const encoded = encodeURIComponent(msg);
-      const url = phone ? `https://api.whatsapp.com/send?phone=${phone}&text=${encoded}` : `https://api.whatsapp.com/send?text=${encoded}`;
-      
-      window.open(url, '_blank');
-
-      setTimeout(() => {
-        if (confirm(`تم إرسال الفاتورة للطالب "${st.name}".\n\nهل تريد الآن تصفير عداد الحصص لبدء دورة جديدة؟`)) {
-          st.sessions = 0;
-          saveToStorage();
-          renderStudents();
-        }
-      }, 1000);
-    }
-
-    function openStudentModal() {
-      document.getElementById('editStudentId').value = '';
-      document.getElementById('studentModalTitle').innerText = 'إضافة طالب جديد';
-      document.getElementById('stName').value = '';
-      document.getElementById('stStage').value = '';
-      document.getElementById('stPrice').value = '100';
-      document.getElementById('stPhone').value = '';
-      document.getElementById('studentModal').classList.add('active');
-    }
-
-    function editStudent(id) {
-      const st = students.find(s => s.id === id);
-      if (!st) return;
-      document.getElementById('editStudentId').value = st.id;
+      editingStudentId = studentId;
       document.getElementById('studentModalTitle').innerText = 'تعديل بيانات الطالب';
-      document.getElementById('stName').value = st.name;
-      document.getElementById('stStage').value = st.stage || '';
-      document.getElementById('stPrice').value = st.price || '';
-      document.getElementById('stPhone').value = st.phone || '';
-      document.getElementById('studentModal').classList.add('active');
+      document.getElementById('btnSaveStudentText').innerText = 'حفظ التعديلات';
+      
+      document.getElementById('sName').value = s.name;
+      document.getElementById('sGrade').value = s.grade || '';
+      document.getElementById('sPhone').value = s.phone || '';
+      document.getElementById('sPrice').value = s.defaultPrice || 150;
+
+      openModal('studentModal');
+    }
+
+    function openAddStudentModal() {
+      editingStudentId = null;
+      document.getElementById('studentModalTitle').innerText = 'إضافة طالب جديد';
+      document.getElementById('btnSaveStudentText').innerText = 'حفظ الطالب';
+      
+      document.getElementById('sName').value = '';
+      document.getElementById('sGrade').value = '';
+      document.getElementById('sPhone').value = '';
+      document.getElementById('sPrice').value = '150';
+
+      openModal('studentModal');
     }
 
     function saveStudent() {
-      const name = document.getElementById('stName').value.trim();
-      if (!name) return alert('يرجى كتابة اسم الطالب');
-      const editId = document.getElementById('editStudentId').value;
-      const stage = document.getElementById('stStage').value.trim();
-      const price = Number(document.getElementById('stPrice').value) || 0;
-      const phone = document.getElementById('stPhone').value.trim();
+      const name = document.getElementById('sName').value.trim();
+      const grade = document.getElementById('sGrade').value.trim();
+      const phone = document.getElementById('sPhone').value.trim();
+      const price = Number(document.getElementById('sPrice').value) || 150;
 
-      if (editId) {
-        const st = students.find(s => s.id === editId);
-        if (st) {
-          st.name = name;
-          st.stage = stage;
-          st.price = price;
-          st.phone = phone;
+      if (!name) {
+        alert('برجاء كتابة اسم الطالب');
+        return;
+      }
+
+      if (editingStudentId) {
+        const s = students.find(item => item.id === editingStudentId);
+        if (s) {
+          s.name = name;
+          s.grade = grade;
+          s.phone = phone;
+          s.defaultPrice = price;
         }
       } else {
         students.push({
-          id: Date.now().toString(),
+          id: 'std_' + Date.now(),
           name,
-          stage,
-          price,
+          grade,
           phone,
-          sessions: 0
+          defaultPrice: price,
+          sessions: []
         });
       }
 
-      saveToStorage();
+      saveData();
       closeModal('studentModal');
       renderStudents();
     }
 
-    function deleteStudent(id) {
-      const st = students.find(s => s.id === id);
-      if (!st) return;
-      if (confirm(`هل أنت متأكد من حذف الطالب "${st.name}"؟`)) {
-        students = students.filter(s => s.id !== id);
-        saveToStorage();
+    function deleteStudent(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+
+      const confirmed = confirm(`هل أنت متأكد من حذف الطالب "${s.name}" نهائياً من الدفتر مع كافة حصصه؟\nلا يمكن التراجع عن هذه الخطوة.`);
+      if (confirmed) {
+        students = students.filter(item => item.id !== studentId);
+        saveData();
         renderStudents();
       }
     }
 
-    function openPaymentModal() {
-      document.getElementById('teacherName').value = paymentSettings.teacherName || '';
-      document.getElementById('paymentDetails').value = paymentSettings.details || '';
-      document.getElementById('paymentModal').classList.add('active');
+    function openRecordModal(studentId) {
+      activeStudentIdForSession = studentId;
+      const s = students.find(item => item.id === studentId);
+      const nextNum = (s.sessions ? s.sessions.length : 0) + 1;
+
+      document.getElementById('recordModalTitle').innerText = `تسجيل حصة للطالب: ${s.name}`;
+      document.getElementById('mSessionNum').value = `الحصة رقم (${nextNum})`;
+      
+      const now = new Date();
+      document.getElementById('mSessionDate').value = now.toISOString().split('T')[0];
+
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('mStartTime').value = `${hours}:${minutes}`;
+
+      const endHour = String((now.getHours() + 1) % 24).padStart(2, '0');
+      document.getElementById('mEndTime').value = `${endHour}:${minutes}`;
+
+      document.getElementById('mSessionPrice').value = s.defaultPrice;
+
+      openModal('recordSessionModal');
+    }
+
+    function confirmSaveSession() {
+      const s = students.find(item => item.id === activeStudentIdForSession);
+      if (!s) return;
+
+      if (!s.sessions) s.sessions = [];
+      const currentNum = s.sessions.length + 1;
+
+      const newSession = {
+        num: currentNum,
+        date: document.getElementById('mSessionDate').value,
+        startTime: document.getElementById('mStartTime').value,
+        endTime: document.getElementById('mEndTime').value,
+        price: Number(document.getElementById('mSessionPrice').value) || s.defaultPrice
+      };
+
+      s.sessions.push(newSession);
+      saveData();
+      closeModal('recordSessionModal');
+      renderStudents();
+    }
+
+    function undoLastSession(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (s && s.sessions && s.sessions.length > 0) {
+        if (confirm(`هل تريد التراجع عن تسجيل الحصة رقم ${s.sessions[s.sessions.length - 1].num}؟`)) {
+          s.sessions.pop();
+          saveData();
+          renderStudents();
+        }
+      }
+    }
+
+    function resetCycle(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+      if (confirm(`تأكيد استلام المبلغ وتصفير العداد لبدء دورة جديدة للطالب ${s.name}؟`)) {
+        if (!s.history) s.history = [];
+        s.history.push({
+          cycleEndedAt: new Date().toISOString(),
+          sessions: [...s.sessions]
+        });
+        s.sessions = [];
+        saveData();
+        renderStudents();
+      }
+    }
+
+    function sendInvoiceWhatsApp(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+
+      let phone = (s.phone || '').trim().replace(/[^0-9]/g, '');
+      if (phone.startsWith('002')) phone = phone.substring(2);
+      else if (phone.startsWith('0')) phone = '2' + phone;
+
+      let total = 0;
+      let sessionsDetails = '';
+      s.sessions.forEach(sess => {
+        total += Number(sess.price);
+        sessionsDetails += `▫️ *الحصة (${sess.num}):* يوم ${formatDateFriendly(sess.date)}\n   ⏱️ الوقت: من ${formatTime12h(sess.startTime)} إلى ${formatTime12h(sess.endTime)}\n   💰 القيمة: ${sess.price} ج\n\n`;
+      });
+
+      let paymentText = '';
+      if (paymentInfo.vodafone) paymentText += `📱 فودافون كاش: ${paymentInfo.vodafone}\n`;
+      if (paymentInfo.instapay) paymentText += `⚡ إنستاباي: ${paymentInfo.instapay}\n`;
+
+      const msg = `السلام عليكم ورحمة الله وبركاته، تحياتي لحضرتك ولي أمر الطالب: *${s.name}* 🌸\n\n` +
+                  `تم بحمد الله إتمام عدد (${s.sessions.length}) حصص، وبيانها كالتالي:\n\n` +
+                  `${sessionsDetails}` +
+                  `💵 *إجمالي المبلغ المستحق:* ${total} جنيه مصري.\n\n` +
+                  (paymentText ? `طرق التحويل المتاحة:\n${paymentText}\n` : '') +
+                  `مع خالص التقدير والتمنيات بدوام التوفيق والنجاح.`;
+
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
+
+    function openPaymentSettings() {
+      document.getElementById('cfgVodafone').value = paymentInfo.vodafone || '';
+      document.getElementById('cfgInstapay').value = paymentInfo.instapay || '';
+      openModal('paymentSettingsModal');
     }
 
     function savePaymentSettings() {
-      paymentSettings.teacherName = document.getElementById('teacherName').value.trim();
-      paymentSettings.details = document.getElementById('paymentDetails').value.trim();
-      localStorage.setItem('hisas_payment', JSON.stringify(paymentSettings));
-      closeModal('paymentModal');
+      paymentInfo.vodafone = document.getElementById('cfgVodafone').value.trim();
+      paymentInfo.instapay = document.getElementById('cfgInstapay').value.trim();
+      localStorage.setItem('smart_tutor_payment', JSON.stringify(paymentInfo));
+      closeModal('paymentSettingsModal');
       alert('تم حفظ بيانات الدفع بنجاح');
     }
 
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('active');
+    function saveData() {
+      localStorage.setItem('smart_tutor_students', JSON.stringify(students));
     }
 
-    function exportBackup() {
-      const data = { students, paymentSettings };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ students, paymentInfo }));
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `نسخة_دفتر_الحصص_${new Date().toISOString().slice(0,10)}.json`;
+      a.href = dataStr;
+      a.download = `نسخة_احتياطية_دفتر_الحصص_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
     }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
     renderStudents();
   </script>
