@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>دفتر الحصص الذكي</title>
+  
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="دفتر الحصص">
+  <meta name="theme-color" content="#1e293b">
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z'/></svg>">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2997/2997295.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --success-dark: #15803d;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 70px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 24px 20px 20px;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .app-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-header {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    .search-box {
+      width: 100%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .search-box::placeholder {
+      color: rgba(255,255,255,0.65);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card.ready-for-billing {
+      border: 2px solid var(--success);
+      background: #f0fdf4;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .header-left-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .student-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .student-grade {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .badge-price {
+      background: #eff6ff;
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .btn-icon-action {
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-edit-student {
+      background: #f1f5f9;
+      color: var(--primary);
+      border-color: #cbd5e1;
+    }
+
+    .btn-edit-student:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-delete-student {
+      background: #fee2e2;
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+
+    .btn-delete-student:hover {
+      background: #fca5a5;
+    }
+
+    .cycle-steps {
+      display: flex;
+      justify-content: space-between;
+      margin: 12px 0 16px;
+      gap: 6px;
+    }
+
+    .step-item {
+      flex: 1;
+      height: 38px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .step-item.completed {
+      background: #dcfce7;
+      color: var(--success);
+      border: 1.5px solid var(--success);
+    }
+
+    .step-item.current {
+      border: 2px dashed var(--primary);
+      color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .sessions-list {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+    }
+
+    .session-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .session-row:last-child {
+      border-bottom: none;
+    }
+
+    .session-num {
+      font-weight: 700;
+      color: var(--primary-dark);
+      width: 65px;
+    }
+
+    .session-time {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      direction: ltr;
+    }
+
+    .session-price-val {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-record {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+      font-size: 0.95rem;
+    }
+
+    .btn-reset {
+      background: var(--surface);
+      color: var(--success);
+      border: 1.5px solid var(--success);
+    }
+
+    .btn-undo {
+      background: transparent;
+      color: var(--danger);
+      font-size: 0.8rem;
+      padding: 4px;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .fab-add {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 26px;
+      z-index: 20;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--text-muted);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="top-bar">
+      <div class="app-title">
+        <span>📚</span> دفتر الحصص الذكي
+      </div>
+      <div class="header-btns">
+        <button class="btn-header" onclick="openPaymentSettings()">💳 بيانات الدفع</button>
+        <button class="btn-header" onclick="exportData()">💾 نسخة احتياطية</button>
+      </div>
+    </div>
+    <input type="text" id="searchInput" class="search-box" placeholder="ابحث باسم الطالب أو المرحلة..." oninput="renderStudents()">
+  </header>
+
+  <div class="container">
+    <div class="filter-tabs">
+      <button class="tab-btn active" onclick="setFilter('all', this)">كل الطلاب</button>
+      <button class="tab-btn" onclick="setFilter('ready', this)">مكتمل (مطلوب الحساب 4/4) 🟢</button>
+      <button class="tab-btn" onclick="setFilter('in-progress', this)">قيد الدورة (1-3) ⏳</button>
+    </div>
+
+    <div class="students-grid" id="studentsList"></div>
+  </div>
+
+  <button class="fab-add" onclick="openAddStudentModal()" title="إضافة طالب">+</button>
+
+  <div class="modal" id="recordSessionModal">
+    <div class="modal-content">
+      <h3 class="modal-title" id="recordModalTitle">تسجيل حصة جديدة</h3>
+      
+      <div class="form-group">
+        <label>رقم الحصة في هذه الدورة</label>
+        <input type="text" id="mSessionNum" readonly style="background:#f1f5f9; font-weight:700;">
+      </div>
+
+      <div class="form-group">
+        <label>تاريخ الحصة</label>
+        <input type="date" id="mSessionDate">
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label>وقت البداية</label>
+          <input type="time" id="mStartTime">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>وقت النهاية</label>
+          <input type="time" id="mEndTime">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>سعر هذه الحصة (جنيه)</label>
+        <input type="number" id="mSessionPrice">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-record" onclick="confirmSaveSession()">حفظ وتأكيد الحصة</button>
+        <button class="btn" style="background:#e2e8f0; color:#333;" onclick="closeModal('recordSessionModal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="studentModal">
+    <div class="modal-content">
+      <h3 class="modal-title" id="studentModalTitle">إضافة طالب جديد</h3>
+      <div class="form-group">
+        <label>اسم الطالب</label>
+        <input type="text" id="sName" placeholder="مثال: يوسف أحمد">
+      </div>
+      <div class="form-group">
+        <label>المرحلة / الصف الدراسي</label>
+        <input type="text" id="sGrade" placeholder="مثال: 3 ثانوي - لغة عربية">
+      </div>
+      <div class="form-group">
+        <label>رقم ولي الأمر (واتساب)</label>
+        <input type="tel" id="sPhone" placeholder="010XXXXXXXX أو 01XXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>سعر الحصة الافتراضي (جنيه)</label>
+        <input type="number" id="sPrice" placeholder="مثال: 150">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-record" id="btnSaveStudentText" onclick="saveStudent()">حفظ الطالب</button>
+        <button class="btn" style="background:#e2e8f0; color:#333;" onclick="closeModal('studentModal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="paymentSettingsModal">
+    <div class="modal-content">
+      <h3 class="modal-title">بيانات التحويل المسجلة</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">هذه البيانات ستُرفق تلقائياً في رسالة الواتساب لولي الأمر:</p>
+      
+      <div class="form-group">
+        <label>رقم فودافون كاش / المحفظة</label>
+        <input type="text" id="cfgVodafone" placeholder="010XXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>حساب إنستاباي (InstaPay)</label>
+        <input type="text" id="cfgInstapay" placeholder="username@instapay">
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-record" onclick="savePaymentSettings()">حفظ البيانات</button>
+        <button class="btn" style="background:#e2e8f0; color:#333;" onclick="closeModal('paymentSettingsModal')">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let students = JSON.parse(localStorage.getItem('smart_tutor_students')) || [];
+    let paymentInfo = JSON.parse(localStorage.getItem('smart_tutor_payment')) || { vodafone: '', instapay: '' };
+    let currentFilter = 'all';
+    let activeStudentIdForSession = null;
+    let editingStudentId = null;
+
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      let [hours, minutes] = timeStr.split(':').map(Number);
+      const period = hours >= 12 ? 'م' : 'ص';
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes < 10 ? '0' + minutes : minutes} ${period}`;
+    }
+
+    function formatDateFriendly(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ar-EG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function setFilter(filter, el) {
+      currentFilter = filter;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      renderStudents();
+    }
+
+    function renderStudents() {
+      const list = document.getElementById('studentsList');
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      list.innerHTML = '';
+
+      let filtered = students.filter(s => {
+        const matchSearch = s.name.toLowerCase().includes(search) || (s.grade && s.grade.toLowerCase().includes(search));
+        const count = s.sessions ? s.sessions.length : 0;
+        if (!matchSearch) return false;
+        if (currentFilter === 'ready') return count >= 4;
+        if (currentFilter === 'in-progress') return count > 0 && count < 4;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا يوجد طلاب مسجلين وفق هذا البحث. اضغط على (+) لإضافة طالب جديد.</div>`;
+        return;
+      }
+
+      filtered.forEach(s => {
+        const count = s.sessions ? s.sessions.length : 0;
+        const isReady = count >= 4;
+        const totalDue = s.sessions ? s.sessions.reduce((acc, cur) => acc + Number(cur.price || s.defaultPrice || 0), 0) : 0;
+
+        const card = document.createElement('div');
+        card.className = `card ${isReady ? 'ready-for-billing' : ''}`;
+
+        let stepsHtml = '';
+        for (let i = 1; i <= 4; i++) {
+          if (i <= count) {
+            stepsHtml += `<div class="step-item completed">✓ الحصة ${i}</div>`;
+          } else if (i === count + 1) {
+            stepsHtml += `<div class="step-item current">الحصة ${i}</div>`;
+          } else {
+            stepsHtml += `<div class="step-item">${i}</div>`;
+          }
+        }
+
+        let sessionsDetailsHtml = '';
+        if (s.sessions && s.sessions.length > 0) {
+          sessionsDetailsHtml = `<div class="sessions-list">`;
+          s.sessions.forEach(sess => {
+            sessionsDetailsHtml += `
+              <div class="session-row">
+                <span class="session-num">حصة ${sess.num}</span>
+                <span>📅 ${formatDateFriendly(sess.date)}</span>
+                <span class="session-time">${formatTime12h(sess.startTime)} - ${formatTime12h(sess.endTime)}</span>
+                <span class="session-price-val">${sess.price} ج</span>
+              </div>
+            `;
+          });
+          sessionsDetailsHtml += `</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="student-name">${s.name}</div>
+              <div class="student-grade">${s.grade || 'طالب خصوصي'}</div>
+            </div>
+            <div class="header-left-actions">
+              <div class="badge-price">${s.defaultPrice} ج / حصة</div>
+              <button class="btn-icon-action btn-edit-student" onclick="openEditStudentModal('${s.id}')" title="تعديل بيانات الطالب">✏️</button>
+              <button class="btn-icon-action btn-delete-student" onclick="deleteStudent('${s.id}')" title="حذف الطالب نهائياً">🗑️</button>
+            </div>
+          </div>
+
+          <div class="cycle-steps">${stepsHtml}</div>
+          
+          ${sessionsDetailsHtml}
+
+          <div class="actions">
+            ${count < 4 ? `
+              <button class="btn btn-record" onclick="openRecordModal('${s.id}')">
+                + تسجيل الحصة (${count + 1} من 4)
+              </button>
+            ` : `
+              <button class="btn btn-whatsapp" onclick="sendInvoiceWhatsApp('${s.id}')">
+                📲 إرسال الفاتورة عبر واتساب (${totalDue} ج)
+              </button>
+              <button class="btn btn-reset" onclick="resetCycle('${s.id}')">
+                ✓ تم استلام المبلغ (بدء دورة جديدة)
+              </button>
+            `}
+
+            ${count > 0 ? `
+              <button class="btn-undo" onclick="undoLastSession('${s.id}')">تراجع عن آخر حصة مسجلة</button>
+            ` : ''}
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // فتح نافذة التعديل
+    function openEditStudentModal(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+
+      editingStudentId = studentId;
+      document.getElementById('studentModalTitle').innerText = 'تعديل بيانات الطالب';
+      document.getElementById('btnSaveStudentText').innerText = 'حفظ التعديلات';
+      
+      document.getElementById('sName').value = s.name;
+      document.getElementById('sGrade').value = s.grade || '';
+      document.getElementById('sPhone').value = s.phone || '';
+      document.getElementById('sPrice').value = s.defaultPrice || 150;
+
+      openModal('studentModal');
+    }
+
+    // فتح نافذة الإضافة
+    function openAddStudentModal() {
+      editingStudentId = null;
+      document.getElementById('studentModalTitle').innerText = 'إضافة طالب جديد';
+      document.getElementById('btnSaveStudentText').innerText = 'حفظ الطالب';
+      
+      document.getElementById('sName').value = '';
+      document.getElementById('sGrade').value = '';
+      document.getElementById('sPhone').value = '';
+      document.getElementById('sPrice').value = '150';
+
+      openModal('studentModal');
+    }
+
+    // حفظ الطالب (جديد أو تعديل)
+    function saveStudent() {
+      const name = document.getElementById('sName').value.trim();
+      const grade = document.getElementById('sGrade').value.trim();
+      const phone = document.getElementById('sPhone').value.trim();
+      const price = Number(document.getElementById('sPrice').value) || 150;
+
+      if (!name) {
+        alert('برجاء كتابة اسم الطالب');
+        return;
+      }
+
+      if (editingStudentId) {
+        // تحديث بيانات الطالب الحالي
+        const s = students.find(item => item.id === editingStudentId);
+        if (s) {
+          s.name = name;
+          s.grade = grade;
+          s.phone = phone;
+          s.defaultPrice = price;
+        }
+      } else {
+        // إضافة طالب جديد
+        students.push({
+          id: 'std_' + Date.now(),
+          name,
+          grade,
+          phone,
+          defaultPrice: price,
+          sessions: []
+        });
+      }
+
+      saveData();
+      closeModal('studentModal');
+      renderStudents();
+    }
+
+    // حذف طالب
+    function deleteStudent(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+
+      const confirmed = confirm(`هل أنت متأكد من حذف الطالب "${s.name}" نهائياً من الدفتر مع كافة حصصه؟\nلا يمكن التراجع عن هذه الخطوة.`);
+      if (confirmed) {
+        students = students.filter(item => item.id !== studentId);
+        saveData();
+        renderStudents();
+      }
+    }
+
+    function openRecordModal(studentId) {
+      activeStudentIdForSession = studentId;
+      const s = students.find(item => item.id === studentId);
+      const nextNum = (s.sessions ? s.sessions.length : 0) + 1;
+
+      document.getElementById('recordModalTitle').innerText = `تسجيل حصة للطالب: ${s.name}`;
+      document.getElementById('mSessionNum').value = `الحصة رقم (${nextNum}) من 4`;
+      
+      const now = new Date();
+      document.getElementById('mSessionDate').value = now.toISOString().split('T')[0];
+
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('mStartTime').value = `${hours}:${minutes}`;
+
+      const endHour = String((now.getHours() + 1) % 24).padStart(2, '0');
+      document.getElementById('mEndTime').value = `${endHour}:${minutes}`;
+
+      document.getElementById('mSessionPrice').value = s.defaultPrice;
+
+      openModal('recordSessionModal');
+    }
+
+    function confirmSaveSession() {
+      const s = students.find(item => item.id === activeStudentIdForSession);
+      if (!s) return;
+
+      if (!s.sessions) s.sessions = [];
+      const currentNum = s.sessions.length + 1;
+
+      const newSession = {
+        num: currentNum,
+        date: document.getElementById('mSessionDate').value,
+        startTime: document.getElementById('mStartTime').value,
+        endTime: document.getElementById('mEndTime').value,
+        price: Number(document.getElementById('mSessionPrice').value) || s.defaultPrice
+      };
+
+      s.sessions.push(newSession);
+      saveData();
+      closeModal('recordSessionModal');
+      renderStudents();
+    }
+
+    function undoLastSession(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (s && s.sessions && s.sessions.length > 0) {
+        if (confirm(`هل تريد التراجع عن تسجيل الحصة رقم ${s.sessions[s.sessions.length - 1].num}؟`)) {
+          s.sessions.pop();
+          saveData();
+          renderStudents();
+        }
+      }
+    }
+
+    function resetCycle(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+      if (confirm(`تأكيد استلام المبلغ وتصفير العداد لبدء دورة جديدة للطالب ${s.name}؟`)) {
+        if (!s.history) s.history = [];
+        s.history.push({
+          cycleEndedAt: new Date().toISOString(),
+          sessions: [...s.sessions]
+        });
+        s.sessions = [];
+        saveData();
+        renderStudents();
+      }
+    }
+
+    function sendInvoiceWhatsApp(studentId) {
+      const s = students.find(item => item.id === studentId);
+      if (!s) return;
+
+      let phone = (s.phone || '').trim().replace(/[^0-9]/g, '');
+      if (phone.startsWith('0')) {
+        phone = '2' + phone;
+      }
+
+      let total = 0;
+      let sessionsDetails = '';
+      s.sessions.forEach(sess => {
+        total += Number(sess.price);
+        sessionsDetails += `▫️ *الحصة (${sess.num}):* يوم ${formatDateFriendly(sess.date)}\n   ⏱️ الوقت: من ${formatTime12h(sess.startTime)} إلى ${formatTime12h(sess.endTime)}\n   💰 القيمة: ${sess.price} ج\n\n`;
+      });
+
+      let paymentText = '';
+      if (paymentInfo.vodafone) paymentText += `📱 فودافون كاش: ${paymentInfo.vodafone}\n`;
+      if (paymentInfo.instapay) paymentText += `⚡ إنستاباي: ${paymentInfo.instapay}\n`;
+
+      const msg = `السلام عليكم ورحمة الله وبركاته، تحياتي لحضرتك ولي أمر الطالب: *${s.name}* 🌸\n\n` +
+                  `تم بحمد الله إتمام دورة الـ (4 حصص)، وبيانها كالتالي:\n\n` +
+                  `${sessionsDetails}` +
+                  `💵 *إجمالي المبلغ المستحق:* ${total} جنيه مصري.\n\n` +
+                  (paymentText ? `طرق التحويل المتاحة:\n${paymentText}\n` : '') +
+                  `مع خالص التقدير والتمنيات بدوام التوفيق والنجاح.`;
+
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
+
+    function openPaymentSettings() {
+      document.getElementById('cfgVodafone').value = paymentInfo.vodafone || '';
+      document.getElementById('cfgInstapay').value = paymentInfo.instapay || '';
+      openModal('paymentSettingsModal');
+    }
+
+    function savePaymentSettings() {
+      paymentInfo.vodafone = document.getElementById('cfgVodafone').value.trim();
+      paymentInfo.instapay = document.getElementById('cfgInstapay').value.trim();
+      localStorage.setItem('smart_tutor_payment', JSON.stringify(paymentInfo));
+      closeModal('paymentSettingsModal');
+      alert('تم حفظ بيانات الدفع بنجاح');
+    }
+
+    function saveData() {
+      localStorage.setItem('smart_tutor_students', JSON.stringify(students));
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ students, paymentInfo }));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = `نسخة_احتياطية_دفتر_الحصص_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    renderStudents();
+  </script>
+</body>
+</html>
