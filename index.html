@@ -570,7 +570,6 @@
   </div>
 
   <script>
-    // تهيئة فايربيس بمعلومات مشروعك الفعلية
     const firebaseConfig = {
       apiKey: "AIzaSyAmkc6M0fVxgVNSaTzjdX0OQ2TIrshh3wM",
       authDomain: "hisas-592eb.firebaseapp.com",
@@ -580,68 +579,34 @@
       appId: "1:435524902026:web:bb44603bfa06468da3e173"
     };
 
-    let db = null;
-    let cloudDoc = null;
-    try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-      cloudDoc = db.collection('hisas_data').doc('workspace');
-    } catch (e) {
-      console.warn("Firebase Init Error:", e);
-    }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    let students = JSON.parse(localStorage.getItem('smart_tutor_students')) || [];
-    let paymentInfo = JSON.parse(localStorage.getItem('smart_tutor_payment')) || { vodafone: '', instapay: '' };
+    let students = [];
+    let paymentInfo = { vodafone: '', instapay: '' };
     let currentFilter = 'all';
     let activeStudentIdForSession = null;
     let editingStudentId = null;
 
-    // تفعيل الاستماع اللحظي للتعديلات السحابية
-    if (cloudDoc) {
-      cloudDoc.onSnapshot(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          if (Array.isArray(data.students)) {
-            students = data.students;
-            localStorage.setItem('smart_tutor_students', JSON.stringify(students));
-          }
-          if (data.paymentInfo) {
-            paymentInfo = data.paymentInfo;
-            localStorage.setItem('smart_tutor_payment', JSON.stringify(paymentInfo));
-          }
-          renderStudents();
-          updateCloudBadge('☁️ مزامنة سحابية نشطة', '#4ade80');
-        } else {
-          // رفع البيانات المحلية أول مرة
-          pushDataToCloud();
-        }
-      }, err => {
-        console.warn("Firestore listener error:", err);
-        updateCloudBadge('⚠️ حفظ محلي (غير متصل بالسحاب)', '#f59e0b');
+    // استماع لحظي مستقل لكل طالب على حدة داخل Collection students
+    db.collection('students').onSnapshot(snapshot => {
+      students = [];
+      snapshot.forEach(doc => {
+        students.push({ id: doc.id, ...doc.data() });
       });
-    }
+      // ترتيب أبجدي حسب الاسم
+      students.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      renderStudents();
+    }, err => {
+      console.error("Firestore students sync error:", err);
+    });
 
-    function updateCloudBadge(text, color) {
-      const badge = document.getElementById('cloudBadge');
-      if (badge) {
-        badge.innerText = text;
-        badge.style.color = color;
+    // استماع سحابي مستقل لبيانات الدفع
+    db.collection('settings').doc('payment').onSnapshot(doc => {
+      if (doc.exists) {
+        paymentInfo = doc.data();
       }
-    }
-
-    function pushDataToCloud() {
-      if (!cloudDoc) return;
-      cloudDoc.set({
-        students: students,
-        paymentInfo: paymentInfo,
-        updatedAt: new Date().toISOString()
-      }, { merge: true }).catch(err => console.error("Cloud push failed:", err));
-    }
-
-    function saveData() {
-      localStorage.setItem('smart_tutor_students', JSON.stringify(students));
-      pushDataToCloud();
-    }
+    });
 
     function formatTime12h(timeStr) {
       if (!timeStr) return '';
@@ -679,7 +644,7 @@
       });
 
       if (filtered.length === 0) {
-        list.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا يوجد طلاب مسجلين وفق هذا البحث. اضغط على (+) لإضافة طالب جديد.</div>`;
+        list.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا يوجد طلاب مسجلين. اضغط على (+) لإضافة طالب جديد.</div>`;
         return;
       }
 
@@ -782,6 +747,7 @@
       openModal('studentModal');
     }
 
+    // حفظ أو تعديل طالب مستقل في مساره الخاص
     function saveStudent() {
       const name = document.getElementById('sName').value.trim();
       const grade = document.getElementById('sGrade').value.trim();
@@ -794,38 +760,29 @@
       }
 
       if (editingStudentId) {
-        const s = students.find(item => item.id === editingStudentId);
-        if (s) {
-          s.name = name;
-          s.grade = grade;
-          s.phone = phone;
-          s.defaultPrice = price;
-        }
+        db.collection('students').doc(editingStudentId).update({
+          name, grade, phone, defaultPrice: price
+        }).then(() => closeModal('studentModal'));
       } else {
-        students.push({
-          id: 'std_' + Date.now(),
+        const newId = 'std_' + Date.now();
+        db.collection('students').doc(newId).set({
           name,
           grade,
           phone,
           defaultPrice: price,
-          sessions: []
-        });
+          sessions: [],
+          history: []
+        }).then(() => closeModal('studentModal'));
       }
-
-      saveData();
-      closeModal('studentModal');
-      renderStudents();
     }
 
+    // حذف طالب منفصل فقط
     function deleteStudent(studentId) {
       const s = students.find(item => item.id === studentId);
       if (!s) return;
 
-      const confirmed = confirm(`هل أنت متأكد من حذف الطالب "${s.name}" نهائياً من الدفتر مع كافة حصصه؟\nلا يمكن التراجع عن هذه الخطوة.`);
-      if (confirmed) {
-        students = students.filter(item => item.id !== studentId);
-        saveData();
-        renderStudents();
+      if (confirm(`هل أنت متأكد من حذف الطالب "${s.name}" نهائياً؟ لن تتأثر بيانات أي طالب آخر.`)) {
+        db.collection('students').doc(studentId).delete();
       }
     }
 
@@ -852,12 +809,13 @@
       openModal('recordSessionModal');
     }
 
+    // تسجيل حصة يؤثر فقط على الطالب المختار
     function confirmSaveSession() {
       const s = students.find(item => item.id === activeStudentIdForSession);
       if (!s) return;
 
-      if (!s.sessions) s.sessions = [];
-      const currentNum = s.sessions.length + 1;
+      const currentSessions = s.sessions || [];
+      const currentNum = currentSessions.length + 1;
 
       const newSession = {
         num: currentNum,
@@ -867,35 +825,41 @@
         price: Number(document.getElementById('mSessionPrice').value) || s.defaultPrice
       };
 
-      s.sessions.push(newSession);
-      saveData();
-      closeModal('recordSessionModal');
-      renderStudents();
+      currentSessions.push(newSession);
+
+      db.collection('students').doc(activeStudentIdForSession).update({
+        sessions: currentSessions
+      }).then(() => closeModal('recordSessionModal'));
     }
 
     function undoLastSession(studentId) {
       const s = students.find(item => item.id === studentId);
       if (s && s.sessions && s.sessions.length > 0) {
         if (confirm(`هل تريد التراجع عن تسجيل الحصة رقم ${s.sessions[s.sessions.length - 1].num}؟`)) {
-          s.sessions.pop();
-          saveData();
-          renderStudents();
+          const currentSessions = [...s.sessions];
+          currentSessions.pop();
+          db.collection('students').doc(studentId).update({
+            sessions: currentSessions
+          });
         }
       }
     }
 
+    // تصفير حصص هذا الطالب فقط وحفظها في أرشيفه دون المساس بأي طالب آخر
     function resetCycle(studentId) {
       const s = students.find(item => item.id === studentId);
       if (!s) return;
-      if (confirm(`تأكيد استلام المبلغ وتصفير العداد لبدء دورة جديدة للطالب ${s.name}؟`)) {
-        if (!s.history) s.history = [];
-        s.history.push({
+      if (confirm(`تأكيد استلام المبلغ وتصفير العداد لبدء دورة جديدة للطالب ${s.name}؟ (بيانات باقي الطلاب لن تتأثر إطلاقاً)`)) {
+        const history = s.history || [];
+        history.push({
           cycleEndedAt: new Date().toISOString(),
-          sessions: [...s.sessions]
+          sessions: [...(s.sessions || [])]
         });
-        s.sessions = [];
-        saveData();
-        renderStudents();
+
+        db.collection('students').doc(studentId).update({
+          sessions: [],
+          history: history
+        });
       }
     }
 
@@ -936,12 +900,16 @@
     }
 
     function savePaymentSettings() {
-      paymentInfo.vodafone = document.getElementById('cfgVodafone').value.trim();
-      paymentInfo.instapay = document.getElementById('cfgInstapay').value.trim();
-      localStorage.setItem('smart_tutor_payment', JSON.stringify(paymentInfo));
-      pushDataToCloud();
-      closeModal('paymentSettingsModal');
-      alert('تم حفظ بيانات الدفع بنجاح');
+      const vodafone = document.getElementById('cfgVodafone').value.trim();
+      const instapay = document.getElementById('cfgInstapay').value.trim();
+      
+      db.collection('settings').doc('payment').set({
+        vodafone: vodafone,
+        instapay: instapay
+      }).then(() => {
+        closeModal('paymentSettingsModal');
+        alert('تم حفظ وتثبيت بيانات الدفع سحابياً بنجاح');
+      });
     }
 
     function exportData() {
@@ -954,8 +922,6 @@
 
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-    renderStudents();
   </script>
 </body>
 </html>
