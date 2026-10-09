@@ -20,6 +20,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- مكتبات Firebase السحابية -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --primary: #2563eb;
@@ -67,7 +71,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .app-title {
@@ -76,6 +80,19 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .cloud-status {
+      font-size: 0.72rem;
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
     }
 
     .header-btns {
@@ -218,21 +235,12 @@
       border-color: #cbd5e1;
     }
 
-    .btn-edit-student:hover {
-      background: #e2e8f0;
-    }
-
     .btn-delete-student {
       background: #fee2e2;
       color: var(--danger);
       border-color: #fecaca;
     }
 
-    .btn-delete-student:hover {
-      background: #fca5a5;
-    }
-
-    /* عداد الحصص المرن المفتوح */
     .cycle-steps {
       display: flex;
       flex-wrap: wrap;
@@ -451,8 +459,11 @@
 
   <header>
     <div class="top-bar">
-      <div class="app-title">
-        <span>📚</span> دفتر الحصص الذكي
+      <div>
+        <div class="app-title">
+          <span>📚</span> دفتر الحصص الذكي
+        </div>
+        <div id="cloudBadge" class="cloud-status">☁️ مزامنة سحابية نشطة</div>
       </div>
       <div class="header-btns">
         <button class="btn-header" onclick="openPaymentSettings()">💳 بيانات الدفع</button>
@@ -559,11 +570,78 @@
   </div>
 
   <script>
+    // تهيئة فايربيس بمعلومات مشروعك الفعلية
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmkc6M0fVxgVNSaTzjdX0OQ2TIrshh3wM",
+      authDomain: "hisas-592eb.firebaseapp.com",
+      projectId: "hisas-592eb",
+      storageBucket: "hisas-592eb.firebasestorage.app",
+      messagingSenderId: "435524902026",
+      appId: "1:435524902026:web:bb44603bfa06468da3e173"
+    };
+
+    let db = null;
+    let cloudDoc = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      cloudDoc = db.collection('hisas_data').doc('workspace');
+    } catch (e) {
+      console.warn("Firebase Init Error:", e);
+    }
+
     let students = JSON.parse(localStorage.getItem('smart_tutor_students')) || [];
     let paymentInfo = JSON.parse(localStorage.getItem('smart_tutor_payment')) || { vodafone: '', instapay: '' };
     let currentFilter = 'all';
     let activeStudentIdForSession = null;
     let editingStudentId = null;
+
+    // تفعيل الاستماع اللحظي للتعديلات السحابية
+    if (cloudDoc) {
+      cloudDoc.onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (Array.isArray(data.students)) {
+            students = data.students;
+            localStorage.setItem('smart_tutor_students', JSON.stringify(students));
+          }
+          if (data.paymentInfo) {
+            paymentInfo = data.paymentInfo;
+            localStorage.setItem('smart_tutor_payment', JSON.stringify(paymentInfo));
+          }
+          renderStudents();
+          updateCloudBadge('☁️ مزامنة سحابية نشطة', '#4ade80');
+        } else {
+          // رفع البيانات المحلية أول مرة
+          pushDataToCloud();
+        }
+      }, err => {
+        console.warn("Firestore listener error:", err);
+        updateCloudBadge('⚠️ حفظ محلي (غير متصل بالسحاب)', '#f59e0b');
+      });
+    }
+
+    function updateCloudBadge(text, color) {
+      const badge = document.getElementById('cloudBadge');
+      if (badge) {
+        badge.innerText = text;
+        badge.style.color = color;
+      }
+    }
+
+    function pushDataToCloud() {
+      if (!cloudDoc) return;
+      cloudDoc.set({
+        students: students,
+        paymentInfo: paymentInfo,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch(err => console.error("Cloud push failed:", err));
+    }
+
+    function saveData() {
+      localStorage.setItem('smart_tutor_students', JSON.stringify(students));
+      pushDataToCloud();
+    }
 
     function formatTime12h(timeStr) {
       if (!timeStr) return '';
@@ -612,7 +690,6 @@
         const card = document.createElement('div');
         card.className = `card ${count > 0 ? 'ready-for-billing' : ''}`;
 
-        // توليد مربعات الحصص بشكل مفتوح وتلقائي
         let stepsHtml = '';
         if (count === 0) {
           stepsHtml = `<div class="step-item current">الحصة 1 (التالية)</div>`;
@@ -862,12 +939,9 @@
       paymentInfo.vodafone = document.getElementById('cfgVodafone').value.trim();
       paymentInfo.instapay = document.getElementById('cfgInstapay').value.trim();
       localStorage.setItem('smart_tutor_payment', JSON.stringify(paymentInfo));
+      pushDataToCloud();
       closeModal('paymentSettingsModal');
       alert('تم حفظ بيانات الدفع بنجاح');
-    }
-
-    function saveData() {
-      localStorage.setItem('smart_tutor_students', JSON.stringify(students));
     }
 
     function exportData() {
